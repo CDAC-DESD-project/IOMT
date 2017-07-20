@@ -3,7 +3,7 @@
 
 
 const byte LDR = 2;
-volatile int val =10;     //data to be send on thingspeak
+volatile int val =10;     //data to be send on ubidots
 String value = "{\"value\": "+(String)val+"}";
 
 String _SSID = "\"YOUR SSID\"";//Enter your wifi ssid 
