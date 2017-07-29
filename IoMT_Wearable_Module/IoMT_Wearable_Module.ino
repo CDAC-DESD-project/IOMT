@@ -6,6 +6,10 @@
 
 #include <DS3231.h>
 
+#define RS 2
+//#define RW 1 // RW Pin of LCD is connected to ground.
+#define E 3
+
 DS3231  rtc(SDA, SCL);  // initialising constructor for IIC.
 Time medicineTime;
 
@@ -36,7 +40,6 @@ void setup() {
   lcd_init_4bit();				// initialising LCD as 4-bit mode.
   lcd_clr();					// clear the LCD for first time.
   introMessage();				// Initialising message
-
 }
 
 void loop() {
@@ -77,7 +80,8 @@ void loop() {
         setappointmentdate();
         break;
 
-      default:  break;
+      default:  convertRTCTimeForLcd();
+        break;
     }
   }
 }
@@ -137,7 +141,7 @@ void lcd_init_4bit(void)
 
 void lcd_data_wrt(unsigned char data)
 {
-	_delay_ms(2);
+	delay(2);
 	PORTD = (data & 0xF0);
 	data_wrt_en();
 	PORTD = ((data & 0x0F)<<4);
@@ -147,7 +151,7 @@ void lcd_data_wrt(unsigned char data)
 
 void lcd_cmd_wrt(unsigned char data)
 {
-	_delay_ms(2);
+	delay(2);
 	PORTD = (data & 0xF0);
 	cmd_wrt_en();
 	PORTD = ((data & 0x0F)<<4);
@@ -159,7 +163,7 @@ void cmd_wrt_en(void)
 	clrbit(PORTD,RS);
 	//clrbit(PORTD,RW);
 	setbit(PORTD,E);
-	_delay_ms(10);
+	delay(10);
 	clrbit(PORTD,E);
 }
 
@@ -168,7 +172,7 @@ void data_wrt_en(void)
 	setbit(PORTD,RS);
 	//clrbit(PORTD,RW);
 	setbit(PORTD,E);
-	_delay_ms(10);
+	delay(10);
 	clrbit(PORTD,E);
 }
 
@@ -189,7 +193,7 @@ void shift_disp_right(unsigned char times)
 	while(i<(times*40))
 	{
 		lcd_cmd_wrt(0x1C);
-		_delay_ms(50);
+		delay(50);
 		i++;
 	}
 
@@ -201,7 +205,7 @@ void shift_disp_left(unsigned char times)
 	while(i<(times*40))
 	{
 		lcd_cmd_wrt(0x18);
-		_delay_ms(50);
+		delay(50);
 		i++;
 	}
 }
@@ -249,8 +253,9 @@ void inttostr(unsigned int x, unsigned char str[])
 
 void introMessage()
 {
-	lcd_const_str_wrt("   CDAC DESD   ");
-	delay(1000);
+	lcd_const_str_wrt("    CDAC DESD   ");
+	lcd_cmd_wrt(LCD_CURSERBLINKOFF);
+	delay(2000);
 }
 
 void welcomeMessage(void)
@@ -259,7 +264,7 @@ void welcomeMessage(void)
   lcd_const_str_wrt("<WELCOME TO THE ");
   next_line();
   lcd_const_str_wrt(" WORLD OF IoMT>");
-  lcd_cmd_wrt(0x0C);
+  lcd_cmd_wrt(LCD_CURSERBLINKOFF);
 }
 
 void enterTime1(void)
@@ -324,20 +329,13 @@ void enterTime1(void)
    if(flag1 == 1 && flag2 == 1)
     return;
     flag1 = 1;
-  if (input == 'D')
+  while(keypad.getKey() != 'D');
   {
     lcd_clr();
     lcd_const_str_wrt("TIMER1 SET DONE!");
+    lcd_cmd_wrt(LCD_CURSERBLINKOFF);
     delay(2000);
     return;
-  }
-  
-  else{
-	  lcd_const_str_wrt("You have pressed");
-	  next_line();
-	  lcd_const_str_wrt("wrong key");
-	  delay(1000);
-	  return;
   }
 }
 
@@ -403,20 +401,13 @@ void enterTime2(void)
   if(flag1 == 1 && flag2 == 1)
     return;
   flag1 = 1;
-  if (input == 'D')
+ while(keypad.getKey() != 'D');
   {
     lcd_clr();
     lcd_const_str_wrt("TIMER2 SET DONE!");
+    lcd_cmd_wrt(LCD_CURSERBLINKOFF);
     delay(2000);
     return;
-  }
-  
-  else{
-	  lcd_const_str_wrt("You have pressed");
-	  next_line();
-	  lcd_const_str_wrt("wrong key");
-	  delay(1000);
-	  return;
   }
 }
 
@@ -481,23 +472,16 @@ void setrtctimer(){
   if(flag1 == 1 && flag2 == 1)
     return;
   flag1 = 1;
-  if (input == 'D')
+  while(keypad.getKey() != 'D');
   {
     lcd_clr();
     lcd_const_str_wrt("RTC TIME SET");
     next_line();
     lcd_const_str_wrt("     DONE!");
+    lcd_cmd_wrt(LCD_CURSERBLINKOFF);
     delay(2000);
     rtc.setTime(unpackedBCDtoInt(RTCTIMEH1, RTCTIMEH2), unpackedBCDtoInt(RTCTIMEM1, RTCTIMEM2), unpackedBCDtoInt(RTCTIMES1, RTCTIMES2)); // 
     return;
-  }
-  
-  else{
-	  lcd_const_str_wrt("You have pressed");
-	  next_line();
-	  lcd_const_str_wrt("wrong key");
-	  delay(1000);
-	  return;
   }
 }
 
@@ -577,24 +561,17 @@ void setrtcdate()
   if(flag1 == 1 && flag2 == 1)
     return;
   flag1 = 1;
-  if (input == 'D')
+  while(keypad.getKey() != 'D');
   {
     lcd_clr();
     lcd_const_str_wrt("RTC DATE SET");
     next_line();
     lcd_const_str_wrt("     DONE!");
+    lcd_cmd_wrt(LCD_CURSERBLINKOFF);
     delay(2000);
     rtc.setDate(unpackedBCDtoInt(RTCDATED1, RTCDATED2), unpackedBCDtoInt(RTCDATEM1, RTCDATEM2), unpackedyearBCDtoInt(RTCDATEY1, RTCDATEY2, RTCDATEY3, RTCDATEY4));
     setrtctimer();
   }
-  
-  else{
-	  lcd_const_str_wrt("You have pressed");
-	  next_line();
-	  lcd_const_str_wrt("wrong key");
-	  delay(1000);
-	  return;
-	}
 }
 
 void setappointmentdate()
@@ -675,24 +652,17 @@ void setappointmentdate()
   if(flag1 == 1 && flag2 == 1)
     return;
   flag1 = 1;
-  if (input == 'D')
+  while(keypad.getKey() != 'D');
   {
     lcd_clr();
     lcd_const_str_wrt("Appointment date");
     next_line();
     lcd_const_str_wrt("Setting DONE!");
+    lcd_cmd_wrt(LCD_CURSERBLINKOFF);
     delay(2000);
 	timeonserialport();
 	setappointmenttime();
   }
-  
-  else{
-	  lcd_const_str_wrt("You have pressed");
-	  next_line();
-	  lcd_const_str_wrt("wrong key");
-	  delay(1000);
-	  return;
-	}
 }
 
 void setappointmenttime()
@@ -759,23 +729,16 @@ void setappointmenttime()
   if(flag1 == 1 && flag2 == 1)
     return;
   flag1 = 1;
-  if (input == 'D')
+  while(keypad.getKey() != 'D');
   {
     lcd_clr();
     lcd_const_str_wrt("APP. TIME SET");
     next_line();
     lcd_const_str_wrt("     DONE!");
+    lcd_cmd_wrt(LCD_CURSERBLINKOFF);
     delay(2000);
     return;
   }	
-  
-  else{
-	  lcd_const_str_wrt("You have pressed");
-	  next_line();
-	  lcd_const_str_wrt("wrong key");
-	  delay(1000);
-	  return;
-	}
 }
 
 void compare()
@@ -813,12 +776,13 @@ void blinkingLedFirstMedicine()
 		if((input = keypad.getKey()) == '*')
 		{
 		  flag = 1;
-		  digitalWrite(secondindication, HIGH);
+		  digitalWrite(firstindication, LOW);
+      welcomeMessage();
 		  break;
 		}
-    digitalWrite(secondindication, HIGH);
+    digitalWrite(firstindication, HIGH);
     delay(200);
-    digitalWrite(secondindication, LOW);
+    digitalWrite(firstindication, LOW);
     delay(200);
 	}
 }
@@ -838,7 +802,8 @@ void blinkingLedSecondMedicine()
 		if((input = keypad.getKey()) == '*')
 		{
 		  flag = 1;
-		  digitalWrite(secondindication, HIGH);
+		  digitalWrite(secondindication, LOW);
+      welcomeMessage();
 		  break;
 		}
     digitalWrite(secondindication, HIGH);
@@ -947,7 +912,7 @@ void checkKeyAppointmentDate()
 		firstaddress++; 
 	  }
    flag1 = 1;
-   setrtcdate();
+   setappointmentdate();
   }
    if(flag1 == 1)
    flag2 = 1;
@@ -967,7 +932,7 @@ void checkKeyAppointmentTime()
 		  
 	  }
    flag1 = 1;
-   setrtcdate();
+   setappointmenttime();
   }
    if(flag1 == 1)
    flag2 = 1;
@@ -1062,5 +1027,82 @@ void indicationForAppointment()
     lcd_data_wrt(arr[i]);
  }
 	delay(2000);
+  return;
+}
+
+void convertRTCTimeForLcd()
+{
+  unsigned char timer[8];
+  unsigned char date[10];
+  medicineTime = rtc.getTime();
+  unsigned char day = medicineTime.date;
+  unsigned char month = medicineTime.mon;
+  unsigned int year = medicineTime.year;
+  
+  timer[2] = timer[5] = ':';
+  timer[0] = 48 + (medicineTime.hour/10);
+  timer[1] = 48 + (medicineTime.hour%10);
+  timer[3] = 48 + (medicineTime.min/10);
+  timer[4] = 48 + (medicineTime.min%10);
+  timer[6] = 48 + (medicineTime.sec/10);
+  timer[7] = 48 + (medicineTime.sec%10);
+  date[2] = date[5] = '-';
+  date[0] = 48 + (day/10);
+  date[1] = 48 + (day%10);
+  date[3] = 48 + (month/10);
+  date[4] = 48 + (month%10);
+  date[6] = 48 + (year/1000);
+  date[7] = 48 + (year-((date[6]-48)*1000))/100;
+  date[8] = 48 + (year-(((date[6]-48)*1000)+((date[7]-48)*100)))/10;
+  date[9] = 48 + (year-(((date[6]-48)*1000)+((date[7]-48)*100)+((date[8]-48)*10)));
+  lcd_clr();
+  lcd_const_str_wrt("Time: ");
+  goto_location(1,6);
+  lcd_data_wrt(timer[0]);
+  goto_location(1,7);
+  lcd_data_wrt(timer[1]);
+  goto_location(1,8);
+  lcd_data_wrt(timer[2]);
+  goto_location(1,9);
+  lcd_data_wrt(timer[3]);
+  goto_location(1,10);
+  lcd_data_wrt(timer[4]);
+  goto_location(1,11);
+  lcd_data_wrt(timer[5]);
+  goto_location(1,12);
+  lcd_data_wrt(timer[6]);
+  goto_location(1,13);
+  lcd_data_wrt(timer[7]);
+  next_line();
+  lcd_const_str_wrt("Date: ");
+  goto_location(2,6);
+  lcd_data_wrt(date[0]);
+  goto_location(2,7);
+  lcd_data_wrt(date[1]);
+  goto_location(2,8);
+  lcd_data_wrt(date[2]);
+  goto_location(2,9);
+  lcd_data_wrt(date[3]);
+  goto_location(2,10);
+  lcd_data_wrt(date[4]);
+  goto_location(2,11);
+  lcd_data_wrt(date[5]);
+  goto_location(2,12);
+  lcd_data_wrt(date[6]);
+  goto_location(2,13);
+  lcd_data_wrt(date[7]);
+  goto_location(2,14);
+  lcd_data_wrt(date[8]);
+  goto_location(2,15);
+  lcd_data_wrt(date[9]);
+  
+  medicineTime = rtc.getTime();
+  timer[6] = 48 + (medicineTime.sec/10);
+  timer[7] = 48 + (medicineTime.sec%10);
+  goto_location(1,12);
+  lcd_data_wrt(timer[6]);
+  goto_location(1,13);
+  lcd_data_wrt(timer[7]);
+  delay(1000);
   return;
 }
