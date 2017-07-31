@@ -1,8 +1,4 @@
-/*
- *
- * Created: 20-July-17 7:04:09 PM
- * Author : Mohd. Rayyan Akthar
- */
+
 
 #include <Wearable.h>
 
@@ -42,6 +38,7 @@ unsigned char flag2 = 0;
 void setup() {
   // put your setup code here, to run once:
   rtc.begin();					// initialise the RTC module.
+  Serial.begin(9600);
   port_init();					// making arduino pins connected to LCD as output pins.
   lcd_init_4bit();				// initialising LCD as 4-bit mode.
   lcd_clr();					// clear the LCD for first time.
@@ -84,6 +81,10 @@ void loop() {
 
       case 'D': lcd_clr();
         setappointmentdate();
+        break;
+
+      case '0': lcd_clr();
+        getTemperature();
         break;
 
       default:  convertRTCTimeForLcd();
@@ -1112,3 +1113,19 @@ void convertRTCTimeForLcd()
   delay(1000);
   return;
 }
+
+void getTemperature()
+{
+  unsigned char temperature[10];
+  float temp;
+  temp = rtc.getTemp();
+  dtostrf(temp, 2, 2, temperature);
+  lcd_clr();
+  lcd_const_str_wrt("  Ambient Temp.:");
+  goto_location(2,5);
+  lcd_str_wrt(temperature);
+  lcd_data_wrt(0b11011111);
+  lcd_const_str_wrt("C");
+  delay(1000);
+}
+
